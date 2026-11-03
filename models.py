@@ -10,5 +10,5 @@ class Book(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     author = Column(String, nullable=False)
-    isbn = Column(String)
+    isbn = Column(String, unique=True)
     is_available = Column(Boolean, default=True)
