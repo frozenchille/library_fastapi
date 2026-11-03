@@ -4,6 +4,7 @@ from database import SessionLocal, engine
 from sqlalchemy.orm import Session
 import models
 from schemas import BookCreate, BookResponse
+from sqlalchemy.exc import IntegrityError
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -30,8 +31,8 @@ def get_db():
 
 @app.get("/books", response_model=list[BookResponse])
 def get_all_books(db: Session=Depends(get_db)):
-    db_products = db.query(models.Book).all()
-    return db_products
+    db_books = db.query(models.Book).all()
+    return db_books
 
 def get_book_or_404(id: int, db: Session):
     book = db.query(models.Book).filter(models.Book.id == id).first()
@@ -47,11 +48,15 @@ def get_book_by_id(id: int, db: Session=Depends(get_db)):
         raise HTTPException(status_code=409, detail="Book is currently checked out")
     return book
 
-@app.post("/books", response_model=BookResponse)
+@app.post("/books", response_model=BookResponse, status_code=201)
 def add_book(book: BookCreate, db: Session=Depends(get_db)):
     new_book = models.Book(**book.model_dump())
     db.add(new_book)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Book with this ISBN already exists")
     db.refresh(new_book)
     return new_book
 
@@ -80,7 +85,6 @@ def delete_book(id: int, db: Session=Depends(get_db)):
     book = get_book_or_404(id, db)
     db.delete(book)
     db.commit()
-    raise HTTPException(status_code=200, detail="Book was deleted succesfully")
 
 @app.put("/books/{id}", response_model=BookResponse)
 def update_book(id: int, book: BookCreate, db: Session=Depends(get_db)):
@@ -88,8 +92,10 @@ def update_book(id: int, book: BookCreate, db: Session=Depends(get_db)):
     db_book.author = book.author
     db_book.title = book.title
     db_book.isbn = book.isbn
-    db.commit()
+    try:
+            db.commit()
+    except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Book with this ISBN already exists")
     db.refresh(db_book)
     return db_book
-    
-     
