@@ -1,12 +1,16 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
 from database import SessionLocal, engine
 from sqlalchemy.orm import Session
 import models
-from schemas import BookCreate, BookResponse
+from schemas import BookCreate, BookResponse, UserCreate, UserResponse
 from sqlalchemy.exc import IntegrityError
+from pwdlib import PasswordHash
 
 models.Base.metadata.create_all(bind=engine)
+
+
 
 app = FastAPI()
 app.add_middleware(
@@ -15,6 +19,7 @@ app.add_middleware(
     allow_methods=['*']
 )
 
+password_hash = PasswordHash.recommended()
 
 
 @app.get("/")
@@ -99,3 +104,17 @@ def update_book(id: int, book: BookCreate, db: Session=Depends(get_db)):
             raise HTTPException(status_code=409, detail="Book with this ISBN already exists")
     db.refresh(db_book)
     return db_book
+
+
+@app.post("/register", response_model=UserResponse, status_code=201)
+def register(user: UserCreate, db: Session=Depends(get_db)):
+    hashed_password = password_hash.hash(user.password)
+    new_user = models.User(email = user.email, hashed_password = hashed_password)
+    db.add(new_user)
+    try:
+         db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="This email allready registered")
+    db.refresh(new_user)
+    return new_user
