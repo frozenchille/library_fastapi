@@ -1,19 +1,18 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from database import SessionLocal, engine
+from database import SessionLocal, engine, get_db
 from sqlalchemy.orm import Session
 import models
 from schemas import BookCreate, BookResponse, UserCreate, UserResponse
 from sqlalchemy.exc import IntegrityError
 from pwdlib import PasswordHash
-from dotenv import load_dotenv
-import datetime
-from datetime import timedelta, timezone
-import jwt
-import os
+from auth import get_current_admin, get_current_user, create_acces_token
+
+
 
 models.Base.metadata.create_all(bind=engine)
+password_hash = PasswordHash.recommended()
 
 
 app = FastAPI()
@@ -23,26 +22,11 @@ app.add_middleware(
     allow_methods=['*']
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-password_hash = PasswordHash.recommended()
-
-
-SECRET_KEY=os.getenv("SECRET_KEY")
-ALGORITM="HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
 
 @app.get("/")
 def homepage():
     return "Test"
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-            yield db
-    finally:
-            db.close()
 
 
 @app.get("/books", response_model=list[BookResponse])
@@ -63,18 +47,6 @@ def get_book_by_id(id: int, db: Session=Depends(get_db)):
     if not book.is_available:
         raise HTTPException(status_code=409, detail="Book is currently checked out")
     return book
-
-@app.post("/books", response_model=BookResponse, status_code=201)
-def add_book(book: BookCreate, db: Session=Depends(get_db)):
-    new_book = models.Book(**book.model_dump())
-    db.add(new_book)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Book with this ISBN already exists")
-    db.refresh(new_book)
-    return new_book
 
 @app.post("/books/{id}/checkout", response_model=BookResponse)
 def checkout_book(id: int, db: Session=Depends(get_db)):
@@ -130,15 +102,25 @@ def register(user: UserCreate, db: Session=Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-def create_acces_token(user_id: int) -> str:
-    payload = {"sub": str(user_id),
-                "exp": (datetime.datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))}
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITM)
-
 @app.post("/token")
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session=Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == form.username).first()
     if not user or not password_hash.verify(form.password, user.hashed_password):
          raise HTTPException(status_code=401, detail="Incorrect email or password")
     return {"access_token": create_acces_token(user.id), "token_type": "bearer"}
-    
+
+
+@app.post("/books", response_model=BookResponse, status_code=201)
+def add_book(book: BookCreate,
+            db: Session=Depends(get_db),
+            current_user: models.User = Depends(get_current_user),
+            admin_user: models.User = Depends(get_current_admin)):
+    new_book = models.Book(**book.model_dump())
+    db.add(new_book)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Book with this ISBN already exists")
+    db.refresh(new_book)
+    return new_book
