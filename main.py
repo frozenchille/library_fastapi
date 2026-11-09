@@ -124,6 +124,6 @@ def register(user: UserCreate, db: Session=Depends(get_db)):
 @app.post("/token")
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session=Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == form.username).first()
-    if not user:
-         raise HTTPException(status_code=401, detail="User not found")
+    if not user or not password_hash.verify(form.password, user.hashed_password):
+         raise HTTPException(status_code=401, detail="Incorrect email or password")
     return {"ok": True}
