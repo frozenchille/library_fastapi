@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from database import SessionLocal, engine
 from sqlalchemy.orm import Session
 import models
@@ -11,7 +11,6 @@ from pwdlib import PasswordHash
 models.Base.metadata.create_all(bind=engine)
 
 
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +18,7 @@ app.add_middleware(
     allow_methods=['*']
 )
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 password_hash = PasswordHash.recommended()
 
 
@@ -33,6 +33,7 @@ def get_db():
             yield db
     finally:
             db.close()
+
 
 @app.get("/books", response_model=list[BookResponse])
 def get_all_books(db: Session=Depends(get_db)):
@@ -115,6 +116,14 @@ def register(user: UserCreate, db: Session=Depends(get_db)):
          db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="This email allready registered")
+        raise HTTPException(status_code=409, detail="Email already registered")
     db.refresh(new_user)
     return new_user
+
+
+@app.post("/token")
+def login(form: OAuth2PasswordRequestForm = Depends(), db: Session=Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == form.username).first()
+    if not user:
+         raise HTTPException(status_code=401, detail="User not found")
+    return {"ok": True}
