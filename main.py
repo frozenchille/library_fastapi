@@ -49,7 +49,9 @@ def get_book_by_id(id: int, db: Session=Depends(get_db)):
     return book
 
 @app.post("/books/{id}/checkout", response_model=BookResponse)
-def checkout_book(id: int, db: Session=Depends(get_db)):
+def checkout_book(id: int,
+                db: Session=Depends(get_db),
+                current_user: models.User = Depends(get_current_user)):
     book = get_book_or_404(id, db)
     if not book.is_available:
         raise HTTPException(status_code=409, detail="Book is already checked out")
@@ -59,7 +61,9 @@ def checkout_book(id: int, db: Session=Depends(get_db)):
     return book
 
 @app.post("/books/{id}/return", response_model=BookResponse)
-def return_book(id: int, db: Session=Depends(get_db)):
+def return_book(id: int,
+                db: Session=Depends(get_db),
+                current_user: models.User = Depends(get_current_user)):
     book = get_book_or_404(id, db)
     if book.is_available:
         raise HTTPException(status_code=409, detail="Book is already available")
@@ -68,14 +72,21 @@ def return_book(id: int, db: Session=Depends(get_db)):
     db.refresh(book)
     return book
 
-@app.delete("/books/{id}")
-def delete_book(id: int, db: Session=Depends(get_db)):
+@app.delete("/books/{id}", status_code=201)
+def delete_book(id: int,
+                db: Session=Depends(get_db),
+                current_user: models.User = Depends(get_current_user),
+                admin_user: models.User = Depends(get_current_admin),):
     book = get_book_or_404(id, db)
     db.delete(book)
     db.commit()
 
 @app.put("/books/{id}", response_model=BookResponse)
-def update_book(id: int, book: BookCreate, db: Session=Depends(get_db)):
+def update_book(id: int,
+                book: BookCreate,
+                db: Session=Depends(get_db),
+                current_user: models.User = Depends(get_current_user),
+                admin_user: models.User = Depends(get_current_admin)):
     db_book = get_book_or_404(id, db)
     db_book.author = book.author
     db_book.title = book.title
