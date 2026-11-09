@@ -12,3 +12,14 @@ class Book(Base):
     author = Column(String, nullable=False)
     isbn = Column(String, unique=True)
     is_available = Column(Boolean, default=True)
+
+
+class User(Base):
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_admin = Column(Boolean, default=False)
+    
