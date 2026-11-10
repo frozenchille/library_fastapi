@@ -4,9 +4,9 @@
 
 ---
 
-<img width="738" height="633" alt="изображение" src="https://github.com/user-attachments/assets/f786a0bf-19bb-4654-b835-c0c6af57bcba" />
+<img width="600" height="450" alt="изображение" src="https://github.com/user-attachments/assets/f786a0bf-19bb-4654-b835-c0c6af57bcba" />
 
-<img width="794" height="493" alt="изображение" src="https://github.com/user-attachments/assets/36339963-6758-449c-b401-cac9a30fca54" />
+<img width="650" height="420" alt="изображение" src="https://github.com/user-attachments/assets/36339963-6758-449c-b401-cac9a30fca54" />
 
 
 ## 🛠 Technology Stack
@@ -56,7 +56,7 @@ library_fastapi/
 
 Clone the repository:
 
-```git clone https://github.com/your-username/library_fastapi.git```
+```git clone https://github.com/frozenchille/library_fastapi.git```
 
 ```cd library_fastapi```
 
