@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Shelf — Library Catalog</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="shell-header">
+  <div class="wrap header-row">
+    <h1 class="wordmark">The Shelf</h1>
+    <nav id="auth-area" class="auth-area">
+      <!-- filled by app.js depending on login state -->
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="auth-panel" class="panel" hidden>
+    <div class="auth-tabs">
+      <button class="tab-btn is-active" data-tab="login">Log in</button>
+      <button class="tab-btn" data-tab="register">Register</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label>Email
+        <input type="email" name="email" required autocomplete="username">
+      </label>
+      <label>Password
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button type="submit">Log in</button>
+    </form>
+
+    <form id="register-form" class="auth-form" hidden>
+      <label>Email
+        <input type="email" name="email" required autocomplete="username">
+      </label>
+      <label>Password
+        <input type="password" name="password" required minlength="8" autocomplete="new-password">
+      </label>
+      <button type="submit">Create account</button>
+    </form>
+  </section>
+
+  <section id="error-banner" class="error-banner" hidden role="alert"></section>
+
+  <section class="panel catalog-head">
+    <div class="catalog-head-row">
+      <h2>Catalog</h2>
+      <input id="search-input" type="search" placeholder="Search title or author…">
+    </div>
+    <button id="add-book-toggle" class="secondary" hidden>+ Add a book</button>
+  </section>
+
+  <section id="add-book-panel" class="panel" hidden>
+    <h3>Add a book</h3>
+    <form id="add-book-form" class="book-form">
+      <label>Title
+        <input type="text" name="title" required>
+      </label>
+      <label>Author
+        <input type="text" name="author" required>
+      </label>
+      <label>ISBN
+        <input type="text" name="isbn" required>
+      </label>
+      <div class="form-actions">
+        <button type="submit">Add to catalog</button>
+        <button type="button" id="add-book-cancel" class="secondary">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div id="book-list" class="book-list">
+      <p class="empty-state">Loading the catalog…</p>
+    </div>
+  </section>
+
+</main>
+
+<div id="edit-modal" class="modal-backdrop" hidden>
+  <div class="modal">
+    <h3>Edit book</h3>
+    <form id="edit-book-form" class="book-form">
+      <input type="hidden" name="id">
+      <label>Title
+        <input type="text" name="title" required>
+      </label>
+      <label>Author
+        <input type="text" name="author" required>
+      </label>
+      <label>ISBN
+        <input type="text" name="isbn" required>
+      </label>
+      <div class="form-actions">
+        <button type="submit">Save changes</button>
+        <button type="button" id="edit-book-cancel" class="secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
