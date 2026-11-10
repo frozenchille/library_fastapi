@@ -4,6 +4,11 @@
 
 ---
 
+<img width="738" height="633" alt="изображение" src="https://github.com/user-attachments/assets/f786a0bf-19bb-4654-b835-c0c6af57bcba" />
+
+<img width="794" height="493" alt="изображение" src="https://github.com/user-attachments/assets/36339963-6758-449c-b401-cac9a30fca54" />
+
+
 ## 🛠 Technology Stack
 
 * **Backend:** Python, FastAPI, SQLAlchemy (ORM), Pydantic
