@@ -1,104 +1,110 @@
-Library Management System (FastAPI + PostgreSQL + Docker)
+# 📚 Library Management System
 
-A fully functional REST API backend for library management with an integrated client interface. The project is fully containerized and uses a modern technology stack to ensure security, role-based access control, and fast database operations.
+> A fully functional REST API backend for library management with an integrated client interface. The project is fully containerized and uses a modern technology stack to ensure security, role-based access control, and fast database operations.
 
-🛠 Technology Stack
+---
 
-Backend: Python, FastAPI, SQLAlchemy (ORM), Pydantic
+## 🛠 Technology Stack
 
-Database: PostgreSQL 15, psycopg driver
+* **Backend:** Python, FastAPI, SQLAlchemy (ORM), Pydantic
+* **Database:** PostgreSQL 15, `psycopg` driver
+* **Authentication:** JWT (JSON Web Tokens), OAuth2PasswordBearer, pwdlib (Argon2 password hashing)
+* **Frontend:** Vanilla JavaScript, HTML5, CSS — no framework, no build step
+* **DevOps & Infrastructure:** Docker, Docker Compose, Nginx
 
-Authentication: JWT (JSON Web Tokens), OAuth2PasswordBearer, Passlib (password hashing)
+---
 
-Frontend: Vanilla JavaScript, HTML5, CSS (Bootstrap 5)
+## ✨ Key Features
 
-DevOps / Infrastructure: Docker, Docker Compose
+* **Authentication & Security:** Secure user registration and issuance of JWT tokens for accessing protected endpoints.
+* **Role-Based Access Control (RBAC):** Separation of access rights. Regular users can view, check out, and return books. Administrators have exclusive rights to add, edit, and delete books from the database.
+* **CRUD Operations:** Full lifecycle management of books and users.
+* **State Control:** Logic to verify book availability (prevents checking out already issued books).
+* **Multi-Container Architecture:** Three isolated services — PostgreSQL, the FastAPI backend, and an Nginx container serving the static frontend — all started together with a single command.
 
-✨ Key Features
+---
 
-Authentication & Security: Secure user registration and issuance of JWT tokens for accessing protected endpoints.
+## 📂 Project Structure
 
-Role-Based Access Control (RBAC): Separation of access rights. Regular users can view, check out, and return books. Administrators have exclusive rights to add, edit, and delete books from the database.
-
-CRUD Operations: Full lifecycle management of books and users.
-
-State Control: Logic to verify book availability (cannot check out an already checked-out book or return one that is currently in the library).
-
-Isolated Environment: The application and database are spun up in a single Docker network with one command, requiring no local environment setup.
-
-Client Interface: A ready-to-use single-page application (SPA) in the library_front folder for visual interaction with the API.
-
-📂 Project Structure
-
+```text
 library_fastapi/
-├── library_front/         # Client interface (HTML, JS, CSS)
-├── auth.py                # Token generation and access rights validation logic
-├── database.py            # PostgreSQL connection setup via SQLAlchemy
-├── main.py                # FastAPI initialization and routes (endpoints)
-├── models.py              # ORM models for database tables
-├── schemas.py             # Pydantic schemas for input/output data validation
-├── docker-compose.yml     # Multi-container application configuration
-├── Dockerfile             # Instructions for building the FastAPI image
-└── requirements.txt       # List of Python dependencies
+├── library_front/         # Client-side interface (HTML, JS, CSS, Dockerfile)
+├── auth.py                # Token generation & permission dependencies
+├── database.py            # PostgreSQL connection via SQLAlchemy
+├── main.py                # FastAPI initialization and endpoints
+├── models.py              # SQLAlchemy database models
+├── schemas.py              # Pydantic validation schemas
+├── docker-compose.yml     # Multi-container orchestration config
+├── Dockerfile              # FastAPI image configuration
+└── requirements.txt        # Python dependencies list
+```
 
+---
 
-🚀 Running the Project
+# 🚀 Running the Project
 
-Prerequisites
+## Prerequisites
 
-To run the project, you must have Docker and Docker Desktop installed on your computer (for Windows/Mac). Local installation of Python or PostgreSQL is not required.
+* Docker and Docker Desktop (Windows/Mac). No local installation of Python or PostgreSQL is required — everything runs inside containers.
 
-Installation and Startup
+## Installation and Startup
 
 Clone the repository:
 
-git clone https://github.com/your-username/library_fastapi.git
-cd library_fastapi
+```git clone https://github.com/your-username/library_fastapi.git```
+
+```cd library_fastapi```
 
 
-Run the containers in the background:
+Start all three services (database, backend, frontend) in one command:
 
-docker compose up -d --build
+```docker compose up -d --build```
+
+Once the containers are running:
+
+* **Frontend (web interface):** http://localhost:3000
+* **Swagger UI (API docs & testing):** http://localhost:8000/docs
+* **Redoc:** http://localhost:8000/redoc
+
+The frontend talks directly to the backend at `http://localhost:8000` — no separate setup, server, or build tool is needed. It is served by its own Nginx container as soon as `docker compose up` finishes.
+
+### Developing the frontend without Docker
+
+If you're actively editing `library_front/` and want faster reloads than rebuilding the container each time, you can serve it directly while the backend still runs separately (via Docker or `uvicorn`):
+
+```cd library_front```
+
+```python -m http.server 3000```
 
 
-After the services start successfully, the API will be available at:
+---
 
-Swagger UI (Documentation & Testing): http://localhost:8000/docs
+# 📌 Main API Endpoints
 
-Redoc: http://localhost:8000/redoc
+**Users:**
+* `POST /register` — Register a new user
+* `POST /token` — Get a JWT token (Login)
+* `GET /me` — Get the currently authenticated user (requires token)
 
-Running the Frontend
+**Books:**
+* `GET /books` — Get a list of all books
+* `GET /books/{id}` — Get information about a specific book
+* `POST /books` — Add a new book (Administrator rights required)
+* `PUT /books/{id}` — Update book data (Administrator rights required)
+* `DELETE /books/{id}` — Delete a book (Administrator rights required)
 
-The interface does not require a build step. Open the library_front folder in your code editor (e.g., VS Code) and run the index.html file using the Live Server extension. The interface will automatically connect to the backend running in Docker.
+**Interacting with Books (Authentication required):**
+* `POST /books/{id}/checkout` — Check out a book to read
+* `POST /books/{id}/return` — Return a book to the library
 
-📌 Main API Endpoints
+---
 
-Users:
+## 🔧 Assigning Administrator Rights
 
-POST /register — Register a new user
+By default, new users are registered as regular readers. To grant administrator rights for testing the full functionality, run the following against the database **inside the running container** — no local PostgreSQL client needed:
 
-POST /token — Get a JWT token (Login)
+```docker exec -it library_fastapi-db-1 psql -U myuser -d library_db -c “UPDATE users SET is_admin = true WHERE email = ‘your_email@example.com’;”```
 
-Books:
+(Replace `library_fastapi-db-1` with your actual container name if different — check it with `docker ps`.)
 
-GET /books — Get a list of all books
-
-GET /books/{id} — Get information about a specific book
-
-POST /books — Add a new book (Administrator rights required)
-
-PUT /books/{id} — Update book data (Administrator rights required)
-
-DELETE /books/{id} — Delete a book (Administrator rights required)
-
-Interacting with Books (Authentication required):
-
-POST /books/{id}/checkout — Check out a book to read
-
-POST /books/{id}/return — Return a book to the library
-
-🔧 Assigning Administrator Rights
-
-By default, new users are registered as regular readers. To grant administrator rights for testing the full functionality, connect to the PostgreSQL database in the container (port 5433 or 5432 depending on your settings) and execute the following SQL query:
-
-UPDATE users SET is_admin = true WHERE email = 'your_email@example.com';
+If you prefer a GUI, connect with pgAdmin to `localhost:5433` (the port mapped in `docker-compose.yml`) using the credentials set in the `db` service's environment variables.
